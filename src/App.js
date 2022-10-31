@@ -1,23 +1,65 @@
-import logo from './logo.svg';
-import './App.css';
+import { useMachine } from "@xstate/react";
+import pizzaStateMachine from "./states/pizzaStateMachine";
+import {
+  AddressForm,
+  Status,
+  Steps,
+  ToppingsForm,
+  TypeForm,
+} from "./components";
 
 function App() {
+  const [current, send] = useMachine(pizzaStateMachine);
+
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div
+      style={{
+        margin: "auto",
+        width: 1200,
+        padding: "1em",
+      }}
+    >
+      {current.matches("setType") ? (
+        <TypeForm
+          context={current.context}
+          onNext={({ type }) => {
+            console.log("on next type", type);
+            send({ type: "type.UPDATE", value: type });
+            send("NEXT");
+          }}
+        />
+      ) : null}
+
+      {current.matches("setToppings") ? (
+        <ToppingsForm
+          context={current.context}
+          onNext={({ toppings }) => {
+            send({ type: "toppings.UPDATE", value: toppings });
+            send("NEXT");
+          }}
+          onPrevious={() => send("PREVIOUS")}
+        />
+      ) : null}
+
+      {current.matches("setAddress") ? (
+        <AddressForm
+          context={current.context}
+          onNext={({ address }) => {
+            send({ type: "address.UPDATE", value: address });
+            send("NEXT");
+          }}
+          onPrevious={() => send("PREVIOUS")}
+        />
+      ) : null}
+      {current.matches("startBaking") ? (
+        <>
+          <Steps current={4} />
+          <Status
+            context={current.context}
+            keys={["status", "bakingTime", "type", "toppings", "address"]}
+          />
+        </>
+      ) : null}
     </div>
   );
 }
